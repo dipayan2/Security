@@ -1,2 +1,1 @@
-# cs461-mps-shared
-CS461 Repository for Shared Collaboration on MPs
+# CS461 MP Repository for rioam2 and dipayan2
