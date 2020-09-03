@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 extern void your_asm_fn();
-
 void practice(unsigned int app, unsigned int sec, unsigned int mp)
 {
 	if( mp != 0xc001f00d)
