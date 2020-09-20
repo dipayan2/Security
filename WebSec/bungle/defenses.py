@@ -1,4 +1,4 @@
-import re, os
+import re, os, binascii
 from bottle import FormsDict, HTTPError
 from hashlib import md5
 
@@ -55,7 +55,10 @@ class CSRFToken(object):
         token = request.get_cookie("csrf_token")
 
         #TODO: implement Token validation
-
+        if token is None:
+            token = str(binascii.b2a_hex(os.urandom(16)), 'utf-8')
+        response.set_cookie("csrf_token", token)
+        
         return token
     @staticmethod
     def formHTML(token):
