@@ -26,6 +26,7 @@ class XSSEncodeAngles(object):
     @staticmethod
     def filter(user_input):
         #TODO: complete this filter definition
+        user_input = user_input.replace("<", "&lt;").replace(">", "&gt;")
         return user_input	
 
 ############################################################
