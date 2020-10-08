@@ -93,7 +93,7 @@
                     $('.search-well > .form-inline').submit(function (e) {
                         e.preventDefault();
                         var form = this;
-                        var query = $('input[name=q]', this).val();
+                        var query = encodeURIComponent($('input[name=q]', this).val());
                         console.log(query);
                         const target_href = `./search?q=${query}`;
                         const spyLink = `${spying_url}?event=search&q=${query}`;
