@@ -27,7 +27,7 @@ with open(cipher_file) as f:
 
 cipher = AES.new(key, AES.MODE_CBC, iv)
 outText = cipher.decrypt(ciphertext)
-outText = outText.decode().strip()
+outText = outText.decode()
 
 file = open(output_file,'w')
 file.write(outText)
