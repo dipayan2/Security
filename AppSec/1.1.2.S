@@ -2,6 +2,10 @@
 .section .text
 
 your_asm_fn:
+
+push    %ebp
+mov     %esp,%ebp
+
 push    %ebp
 mov     %esp,%ebp
 push    $0xc001f00d    

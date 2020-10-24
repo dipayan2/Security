@@ -6,6 +6,7 @@ your_asm_fn:
 push    %ebp
 mov     %esp,%ebp
 
+# Your code here
 # Push *mp as "coolfood" in little-endian ASCII to the stack and store pointer in %eax
 pushl $0x00000000
 pushl $0x646f6f66

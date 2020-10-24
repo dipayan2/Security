@@ -5,6 +5,9 @@ your_asm_fn:
 
 push    %ebp
 mov     %esp,%ebp
+
+# Your code here
+
 push    $0xc001f00d
 push    %esp
 push    $0xc105ed
