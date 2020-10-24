@@ -40,7 +40,7 @@ partial.key.d = key
 decrypt_first_byte = partial.key._decrypt(cipher_whole_long)
 outPut = int.from_bytes(long_to_bytes(decrypt_first_byte), "big")
 outFile = open(output_file,'w')
-outFile.write(str(hex(outPut)))
+outFile.write(str(hex(outPut))[2:])
 outFile.close()
 # print(int.from_bytes(long_to_bytes(decrypt_first_byte), "big"))
 # decrypted = map(partial.key._decrypt, enc_msg)
