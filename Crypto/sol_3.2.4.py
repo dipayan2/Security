@@ -4,8 +4,6 @@ from Crypto.Util import number
 from Crypto.PublicKey import RSA
 from pbp import *
 
-
-
 def readInputFiles():
     inpFile = 'moduli.hex'
     ReadNvalues = []
@@ -100,13 +98,19 @@ if __name__ == '__main__':
     e_pub = 65537
     results = batchgcd_faster(NModulo)
     possible_KeyVal = findPQ_Pair(NModulo,results,e_pub)
-    print("Possible Keys :",possible_KeyVal)
+    # print("Possible Keys :",possible_KeyVal)
     print("Decrypting.....")
     for val in possible_KeyVal:
-        nmod,dpriv = val
-        myKey = RSA.construct((nmod,e_pub,dpriv))
-        pText = decrypt(myKey,cipherText)
-        print(pText)
-        print("\n")
+        try:
+            nmod,dpriv = val
+            # impl = RSA.RSAImplementation(use_fast_math=False)
+            myKey = RSA.construct((nmod,e_pub,dpriv))
+            # myKey.key.d = dpriv
+            pText = decrypt(myKey,cipherText)
+            print(pText)
+            print("\n")
+        except ValueError:
+            continue
+
 
     
