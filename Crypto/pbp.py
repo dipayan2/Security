@@ -57,7 +57,7 @@ def encrypt(rsakey,s):
 
 def decrypt(rsakey,c):
     data = re.search(encrypt_header+"(.*)"+encrypt_footer,c,flags=re.DOTALL).groups()[0]
-    print("PBP:",data)
+    # print("PBP:",data)
     data = base64.b64decode(data)
     rsam,index = parse_bits(data,0)
 
