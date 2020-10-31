@@ -29,7 +29,7 @@ def parse_bits(s,index):
     return s[index+4:index+4+length],index+4+length
 
 encrypt_header = '-----BEGIN PRETTY BAD ENCRYPTED MESSAGE-----\n'
-encrypt_footer = '-----END PRETTY BAD ENCRYPTED MESSAGE-----\n'
+encrypt_footer = '\n-----END PRETTY BAD ENCRYPTED MESSAGE-----'
 
 # PKCS 7 pad message.
 def pad(s,blocksize=AES.block_size):
