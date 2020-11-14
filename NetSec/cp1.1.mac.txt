@@ -1,0 +1,6 @@
+02:42:ac:52:c6:60
+02:42:ac:0b:77:d1
+02:42:ac:57:db:7c
+02:42:ac:0e:cd:c8
+02:42:f6:4e:45:93
+# This last line is the gateway
