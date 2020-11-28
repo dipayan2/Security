@@ -24,6 +24,10 @@ def debug(s):
 
 # TODO: returns the mac address for an IP
 def mac(IP):
+    arpReq = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst=IP)
+    resp = srp(arpReq)
+    print(resp)
+    return resp[0][0][1].hwsrc
 
 
 #ARP spoofs client, httpServer, dnsServer
