@@ -1,5 +1,5 @@
-<<<<<<< HEAD
-# CS461 repository for dipayan2
-=======
-# CS461 MP Repository for rioam2 and dipayan2
->>>>>>> release/master
+Code for CS461 : Security
+AppCode : Modifying the .s code
+Crypto : Breaking the encryption
+WebSec : SQL Injection
+NetSec : Mitnic Attack
